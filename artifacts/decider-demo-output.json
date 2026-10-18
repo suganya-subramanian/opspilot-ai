@@ -1,0 +1,19 @@
+{
+  "problem": "The Kubernetes pod is in CrashLoopBackOff, has restarted six times, and exited with code 1. Determine the most useful diagnostic action to investigate the cause.",
+  "pod_name": "payments-api-demo",
+  "namespace": "production",
+  "decision": {
+    "selected_tool": "container_logs",
+    "probabilities": {
+      "pod_status": 0.0886,
+      "container_logs": 0.6629,
+      "pod_events": 0.2485
+    },
+    "confidence": 0.4944,
+    "decider_calls": 1,
+    "latency_ms": 4599.57
+  },
+  "diagnostic_tool": "container_logs",
+  "diagnostic_evidence": "Pod: payments-api-demo\nNamespace: production\nSimulated container log:\nERROR: Required environment variable DATABASE_URL is missing.\nApplication startup failed.",
+  "explanation": null
+}
