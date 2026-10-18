@@ -64,7 +64,7 @@ Return a concise, practical troubleshooting report.
                     }
                 ],
                 "inferenceConfig": {
-                    "max_new_tokens": 600,
+                    "max_new_tokens": 250,
                     "temperature": 0.2,
                 },
             }
