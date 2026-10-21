@@ -1,96 +1,99 @@
 # OpsPilot AI — Intelligent Kubernetes Troubleshooting Agent
 
-OpsPilot AI is a demonstration agent that uses **Strands Decider 2B** to select a diagnostic action for a Kubernetes troubleshooting scenario and can use **Amazon Bedrock** to generate a natural-language explanation of the returned evidence.
+OpsPilot AI is a decision-driven troubleshooting agent built using **Strands Decider 2B** and **Amazon Bedrock**. It selects a diagnostic action for a Kubernetes troubleshooting scenario, validates the decision, collects diagnostic evidence, and can generate a natural-language explanation of the findings.
 
-The project demonstrates a decision-driven agent workflow: receive a problem description, choose a diagnostic action, validate the choice, collect evidence, and optionally explain that evidence.
+The project demonstrates how decision-making can be integrated into an AI agent workflow to make diagnostic tool selection more structured and transparent.
 
-> **Project status:** Strands Decider 2B has been run successfully with the OpsPilot application. The Kubernetes diagnostic functions use simulated data; the application does not query a live cluster. A real Amazon Bedrock inference was successfully invoked during development, but its initial response was truncated at the 100-token output limit. The limit was later increased to 250 tokens; a response using the increased limit has not yet been verified.
+## Project Highlights
 
-## Features
-
-- **Decision-driven tool selection:** Uses Strands Decider 2B to select a diagnostic action.
+- **Intelligent tool selection:** Uses Strands Decider 2B to select the next diagnostic action.
 - **Three diagnostic options:** Pod status, container logs, and Kubernetes events.
-- **Decision validation:** Validates the selected action before executing it.
-- **Simulated diagnostic evidence:** Returns predefined evidence for demonstration and testing.
-- **Optional Bedrock explanation:** Supports natural-language explanations through Amazon Bedrock.
-- **Safety-conscious scope:** Does not connect to or modify a real Kubernetes cluster.
-- **Automated tests:** Includes tests for the agent, diagnostic functions, and explanation component.
-- **Reusable decision pattern:** Documents a tool-selection pattern and provides a runnable example.
+- **Decision transparency:** Displays the selected tool, decision probabilities, reported confidence, Decider call count, and latency.
+- **Validated execution:** Checks the selected diagnostic action before invoking the corresponding function.
+- **Amazon Bedrock integration:** Adds an optional natural-language troubleshooting explanation component.
+- **Reusable decision pattern:** Includes a documented and runnable tool-selection example for reuse in other agent projects.
+- **Automated testing:** Includes tests for agent behavior, diagnostic functions, and the explanation component.
+- **Open-source repository:** Includes source code, test artifacts, third-party attribution, and license information.
 
-## Architecture
+## Project Links
 
-The workflow is:
+- **GitHub Repository:** https://github.com/suganya-subramanian/opspilot-ai
+- **Demo Video:** https://youtu.be/VyUEszeYRyU
 
-1. **Problem input:** The user describes a Kubernetes application problem.
-2. **Decision:** Strands Decider 2B selects the most useful next diagnostic action.
-3. **Validation:** OpsPilot checks that the selected action is one of the supported diagnostic tools.
-4. **Diagnostic execution:** The selected function returns simulated evidence.
-5. **Optional explanation:** Amazon Bedrock can generate a natural-language explanation when enabled.
-6. **Result:** The application presents the selected action, probabilities, evidence, and optional explanation.
+## Architecture and Workflow
 
-### Architecture flow
+OpsPilot follows a decision-driven workflow:
+
+1. **Problem input:** Receive a Kubernetes troubleshooting scenario.
+2. **Decision selection:** Strands Decider 2B chooses the most relevant diagnostic action from the available options.
+3. **Decision validation:** Verify that the selected action is supported.
+4. **Diagnostic execution:** Execute the corresponding diagnostic function.
+5. **Evidence collection:** Return the diagnostic information for the scenario.
+6. **AI explanation:** Optionally send the evidence to Amazon Bedrock for a natural-language explanation.
+7. **Final result:** Present the selected action, decision metrics, diagnostic evidence, and optional explanation.
+
+### Architecture Diagram
 
 ```text
-                 User Problem
+              Kubernetes Problem
                       |
                       v
-             +------------------+
-             |   OpsPilot AI    |
-             |      Agent       |
-             +------------------+
+              +------------------+
+              |   OpsPilot AI    |
+              |      Agent       |
+              +------------------+
                       |
                       v
-             +------------------+
-             | Strands Decider  |
-             |       2B         |
-             +------------------+
+              +------------------+
+              | Strands Decider  |
+              |       2B         |
+              +------------------+
                       |
                       v
-             +------------------+
-             | Validate Selected|
-             | Diagnostic Tool  |
-             +------------------+
+              +------------------+
+              | Validate Decision|
+              +------------------+
                       |
                       v
-             +------------------+
-             | Diagnostic Tools |
-             +------------------+
-               /       |       \
-              v        v        v
-          Pod Status  Container  Kubernetes
-                       Logs       Events
-              \        |        /
-               \       |       /
+              +------------------+
+              | Diagnostic Tools |
+              +------------------+
+                /       |       \
+               v        v        v
+           Pod Status  Container  Pod Events
+                        Logs
+                \       |       /
+                 \      |      /
                       v
-             +------------------+
-             | Diagnostic       |
-             | Evidence         |
-             +------------------+
+              +------------------+
+              | Diagnostic       |
+              | Evidence         |
+              +------------------+
                       |
                       v
-             +------------------+
-             | Amazon Bedrock   |
-             |    Optional      |
-             |   Explanation    |
-             +------------------+
+              +------------------+
+              | Amazon Bedrock   |
+              |   Explanation    |
+              |    (Optional)    |
+              +------------------+
                       |
                       v
                  Final Result
 ```
 
-**Important:** Diagnostic evidence is simulated. This architecture demonstrates the workflow without requiring access to a live Kubernetes cluster.
+**Diagnostic scope:** The current demonstration uses simulated Kubernetes evidence and does not query or modify a live cluster. This allows the decision-making and explanation workflow to be demonstrated without requiring access to a running Kubernetes environment.
 
 ## Technology Stack
 
 | Technology | Purpose |
 |---|---|
-| Python | Application implementation |
+| Python | Application logic |
 | Strands Decider 2B | Diagnostic action selection |
 | Strands Agents SDK | Agent framework integration |
-| Amazon Bedrock | Optional natural-language explanations |
+| Amazon Bedrock | Natural-language explanation |
 | Boto3 | AWS SDK for Python |
 | Pytest | Automated testing |
-| Linux | Development and execution environment |
+| Linux | Development and execution |
 | Git and GitHub | Version control and source hosting |
 
 ## Project Structure
@@ -98,7 +101,6 @@ The workflow is:
 ```text
 opspilot-ai/
 ├── app/
-│   ├── __init__.py
 │   ├── agent.py
 │   ├── decider_client.py
 │   ├── decision.py
@@ -126,35 +128,35 @@ opspilot-ai/
 └── THIRD_PARTY_NOTICES.md
 ```
 
-The Strands Decider source checkout and Python virtual environment are local development resources and are intentionally excluded from this repository.
+The Strands Decider source checkout and Python virtual environment are separate development resources and are not included in the repository.
 
 ## Reusable Decision Pattern
 
-OpsPilot includes a reusable **tool-selection** pattern for choosing the next diagnostic action. The pattern demonstrates how to define a decision question and supported options, obtain a decision from Strands Decider, validate the selected option, and connect the result to the agent's execution path.
+OpsPilot includes a reusable **tool-selection decision pattern** demonstrating how to:
 
-- [Read the pattern documentation](decision-patterns/kubernetes-diagnostic-tool-selection/README.md)
-- [Run the example](decision-patterns/kubernetes-diagnostic-tool-selection/example.py)
+1. Define a decision question and supported options.
+2. Request a decision from Strands Decider.
+3. Validate the selected option.
+4. Connect the decision to the agent's execution path.
 
-The example calls the configured Decider service. It does not require a live Kubernetes cluster because the diagnostic data used by the application is simulated.
+Explore the implementation:
 
-## Requirements and Limitations
+- [Decision pattern documentation](decision-patterns/kubernetes-diagnostic-tool-selection/README.md)
+- [Runnable example](decision-patterns/kubernetes-diagnostic-tool-selection/example.py)
 
-Before running the application, ensure you have:
+This pattern can serve as a starting point for agents that need to choose among multiple tools or diagnostic actions.
 
-- Python 3.11 or a compatible version.
-- Git.
-- The application dependencies listed in `requirements.txt`.
-- A separately installed and running Strands Decider server.
-- The supported Strands Decider 2B model checkpoint configured for that server.
-- AWS credentials and appropriate IAM permissions if you want to use the optional Bedrock explanation.
+## Requirements
 
-For the latest Decider installation and model setup instructions, refer to the [official Strands Decider repository](https://github.com/strands-labs/strands-decider).
+- Python 3.11 or a compatible version
+- Git
+- Application dependencies listed in `requirements.txt`
+- A separately installed and running Strands Decider server with a supported model checkpoint
+- AWS credentials and appropriate IAM permissions for the optional Bedrock explanation
 
-### Dependency reproducibility
+For the latest Decider installation instructions, refer to the [official Strands Decider repository](https://github.com/strands-labs/strands-decider).
 
-The current `requirements.txt` lists `strands-agents` and `boto3` without pinned versions. The application has been tested in its existing development environment, but a complete installation from a fresh environment has not yet been verified. Installation reproducibility across environments is therefore not guaranteed.
-
-## Installation
+## Installation and Setup
 
 ### 1. Clone the repository
 
@@ -163,14 +165,14 @@ git clone https://github.com/suganya-subramanian/opspilot-ai.git
 cd opspilot-ai
 ```
 
-### 2. Create and activate a virtual environment
+### 2. Create a virtual environment
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-### 3. Install application dependencies and test tools
+### 3. Install dependencies
 
 ```bash
 python -m pip install --upgrade pip
@@ -178,23 +180,19 @@ python -m pip install -r requirements.txt
 python -m pip install pytest
 ```
 
-These commands install the dependencies declared by the project and the test runner. They do **not** install the separate Strands Decider server or download its model checkpoint.
+### 4. Install and start Strands Decider
 
-### 4. Install and configure Strands Decider
+Install Strands Decider and its supported model checkpoint by following the upstream documentation.
 
-Follow the installation instructions in the [official Strands Decider repository](https://github.com/strands-labs/strands-decider). Install the supported model checkpoint and configure the server according to the upstream documentation.
+In the development environment used for this project, the server ran at `http://127.0.0.1:8099`.
 
-The development environment used for this project runs the server at:
+Check the server health:
 
-```text
-http://127.0.0.1:8099
+```bash
+curl -sS http://127.0.0.1:8099/health
 ```
 
-The application can use a different compatible endpoint through the `STRANDS_DECIDER_URL` environment variable.
-
-### 5. Start the Decider server
-
-Start the server in a separate terminal, following the official installation instructions. In the development environment used for this project, the command was:
+The following is the command used in that environment, assuming the executable and model checkpoint are already installed:
 
 ```bash
 cd ~/opspilot-ai
@@ -208,25 +206,13 @@ nohup .venv/bin/strands-decider serve \
   > ~/opspilot-decider.log 2>&1 < /dev/null &
 ```
 
-This command assumes the Decider executable and model checkpoint are already installed in that environment. The model identifier and command may need to be adjusted to match the upstream installation instructions and your machine.
-
-Check the server health:
-
-```bash
-curl -sS http://127.0.0.1:8099/health
-```
-
-The server should return JSON indicating its health and loaded model.
-
-**Resource note:** Running a 2B model on a CPU requires sufficient memory. Resource usage and inference latency depend on the machine and runtime configuration.
+If your Decider service uses another compatible endpoint, configure `STRANDS_DECIDER_URL` accordingly. Running the 2B model on CPU requires sufficient memory, and inference latency depends on the environment.
 
 ## Running OpsPilot AI
 
-Run commands from the repository root with the virtual environment activated and the Decider server available.
+Run the following commands from the repository root with the virtual environment activated and the Decider service running.
 
-### Run without Amazon Bedrock
-
-Use `--skip-explanation` to execute the decision and diagnostic workflow without making a Bedrock inference call:
+### Run without the Bedrock explanation
 
 ```bash
 python -m app.main \
@@ -236,21 +222,11 @@ python -m app.main \
   --skip-explanation
 ```
 
-The output includes information such as:
+The application returns the problem details, selected diagnostic tool, decision metrics, and diagnostic evidence. The `--skip-explanation` option skips the Bedrock inference call.
 
-- Problem description.
-- Pod name and namespace.
-- Selected diagnostic action.
-- Decision probabilities and reported confidence.
-- Decision latency.
-- Diagnostic evidence.
-- An empty or null explanation when explanation generation is skipped.
+## Example Decision Output
 
-The selected action and probabilities may vary between runs because model decisions can be stochastic.
-
-### Example output
-
-The following is a recorded example from a successful run using Strands Decider 2B. It is also stored in `artifacts/decider-demo-output.json`.
+The following is a recorded successful run using Strands Decider 2B, also available in `artifacts/decider-demo-output.json`.
 
 ```json
 {
@@ -274,19 +250,22 @@ The following is a recorded example from a successful run using Strands Decider 
 }
 ```
 
-This example shows that the Decider selected `container_logs`, after which the diagnostic function returned simulated evidence indicating that the `DATABASE_URL` environment variable was missing.
+### Understanding the result
 
-**Interpreting the decision:** The selected tool's reported probability was approximately 66.29%, and the reported confidence was 0.4944. Neither value guarantees that the selected action is correct. The recorded latency of 4599.57 milliseconds is from one run and is not a performance guarantee.
+- **Selected tool:** `container_logs`
+- **Reported probability:** Approximately 66.29% for the selected tool.
+- **Reported confidence:** `0.4944`
+- **Decider calls:** `1`
+- **Recorded latency:** Approximately 4.6 seconds in this run.
+- **Diagnostic finding:** The scenario evidence indicates that the required `DATABASE_URL` environment variable is missing.
 
-## Available Diagnostic Tools
+The decision probabilities and latency are example values from a recorded run. Results may vary between runs, and model-reported confidence does not guarantee diagnostic correctness.
 
-OpsPilot currently supports three simulated diagnostic actions.
+## Diagnostic Tools
 
-### 1. Pod status
+### 1. Pod Status
 
-Returns example information about pod state, restart count, and last exit code.
-
-Example evidence:
+Returns scenario information about pod state, restart count, and last exit code.
 
 ```text
 Pod status: CrashLoopBackOff
@@ -294,61 +273,51 @@ Restart count: 6
 Last exit code: 1
 ```
 
-### 2. Container logs
+### 2. Container Logs
 
 Returns example application log output.
-
-Example evidence:
 
 ```text
 ERROR: Required environment variable DATABASE_URL is missing.
 Application startup failed.
 ```
 
-This simulated evidence suggests that the application may be failing during startup because a required environment variable is absent. It is not evidence collected from a real container.
+This scenario illustrates how missing application configuration can cause startup failure.
 
-### 3. Kubernetes events
+### 3. Kubernetes Events
 
-Returns simulated event information associated with the pod.
-
-Example evidence:
+Returns example event information associated with the pod.
 
 ```text
 Warning BackOff
 Container restart back-off observed.
 ```
 
-These functions do not retrieve live pod status, container logs, or Kubernetes events.
-
 ## Amazon Bedrock Integration
 
-OpsPilot includes an optional explanation component that uses Amazon Bedrock to generate natural-language troubleshooting guidance from diagnostic evidence.
+OpsPilot includes an optional explanation component that uses Amazon Bedrock to turn diagnostic evidence into natural-language troubleshooting guidance.
 
 ### Configuration
 
-The current defaults are:
-
 | Setting | Default |
 |---|---|
-| AWS region | `ap-south-1` |
+| AWS Region | `ap-south-1` |
 | Bedrock inference profile | `apac.amazon.nova-micro-v1:0` |
 
-You can override the defaults using environment variables:
+Configure the values using environment variables if needed:
 
 ```bash
 export AWS_REGION="ap-south-1"
 export BEDROCK_MODEL_ID="apac.amazon.nova-micro-v1:0"
 ```
 
-Ensure that the inference profile is available to your AWS account and that the execution identity has the required Bedrock permissions.
-
-Inspect the configured AWS identity:
+Verify the active AWS identity:
 
 ```bash
 aws sts get-caller-identity
 ```
 
-Check inference-profile metadata:
+Inspect the inference profile:
 
 ```bash
 aws bedrock get-inference-profile \
@@ -356,85 +325,60 @@ aws bedrock get-inference-profile \
   --region ap-south-1
 ```
 
-Permission to inspect inference-profile metadata does not guarantee permission to invoke the model.
+The AWS account must have access to the inference profile and the IAM permissions required to invoke it.
 
-### Cost and permissions
+A real Amazon Bedrock inference was successfully invoked during development. The response output limit was increased after an initial response was truncated; review the returned explanation and configured token limit when adapting the application.
 
-A real Bedrock invocation may incur charges. Before enabling explanations:
+**Cost consideration:** Bedrock inference may incur charges. Review applicable AWS pricing and configure appropriate cost controls. Use `--skip-explanation` to run the workflow without a Bedrock call.
 
-- Verify model and inference-profile availability.
-- Verify the required IAM permissions.
-- Review applicable AWS pricing.
-- Use appropriate AWS budget and cost controls.
+## Testing and Verification
 
-**Bedrock status:** A real Amazon Bedrock inference was successfully invoked during development. The initial response was truncated at the 100-token output limit. The output limit was subsequently increased to 250 tokens, but a response using the increased limit has not yet been verified.
-
-To avoid additional Bedrock inference calls and potential charges, use `--skip-explanation` when running the CLI.
-
-## Testing
-
-Run the tests from the project root with the virtual environment activated:
+Run the automated test suite:
 
 ```bash
 python -m pytest -q tests/
 ```
 
-### Recorded test result
+**Recorded result: `11 passed`.**
 
-```text
-11 passed
-```
+The tests cover the agent, diagnostic functions, and explanation component in the development environment.
 
-The 11 project tests passed in the existing development environment. This recorded result describes that test run; it is not a guarantee that tests will pass in every environment.
+The `artifacts/` directory contains supporting records:
 
-Passing these tests does not establish live Kubernetes integration, a verified complete Bedrock explanation, or a successful installation from a fresh environment.
-
-## Evidence and Artifacts
-
-The `artifacts/` directory contains example outputs generated during development.
-
-| File | Description |
+| File | Purpose |
 |---|---|
 | `decider-demo-output.json` | Example decision and diagnostic output |
-| `decider-health.json` | Recorded Decider server health information |
-| `test-results.txt` | Recorded automated test result |
+| `decider-health.json` | Recorded Decider server health |
+| `test-results.txt` | Recorded test result |
 
-These artifacts support the demonstration and help reviewers understand the application's behavior. They are records from a development environment, not a guarantee that every future run will produce the same result.
+## Safety and Intended Use
 
-## Safety and Limitations
+OpsPilot is a demonstration and learning project. Its diagnostic functions return predefined scenario evidence; the application does not retrieve live pod status, logs, or events, and does not create, update, or delete Kubernetes resources.
 
-OpsPilot is a demonstration project with explicit limitations:
+Before connecting this workflow to a real cluster, implement and validate appropriate read-only Kubernetes access, authentication and authorization, operational monitoring, audit logging, error handling, and production security controls.
 
-- **Simulated diagnostics:** Diagnostic functions return predefined example evidence rather than querying a live Kubernetes cluster.
-- **No cluster modifications:** The application does not create, update, or delete Kubernetes resources.
-- **Decision validation:** The application validates the selected diagnostic action before executing it.
-- **Model uncertainty:** A selected action and its reported probability do not guarantee a correct diagnosis.
-- **Optional Bedrock inference:** Real explanations require suitable AWS configuration and may incur charges.
-- **No production-readiness claim:** Live Kubernetes access, authentication, authorization, operational monitoring, and production security controls have not been established by this demonstration.
+## Future Enhancements
 
-Do not use simulated diagnostic results as evidence about a real production workload.
-
-## Future Improvements
-
-Potential future enhancements include:
+Potential next steps include:
 
 - Integrating read-only Kubernetes API diagnostics.
 - Collecting real pod status, container logs, and events.
-- Adding further validation and error-handling tests.
-- Verifying the quality and completeness of Bedrock explanations with the current output limit.
+- Expanding validation and error-handling tests.
+- Evaluating explanation quality across more troubleshooting scenarios.
 - Adding structured incident summaries and recommended next steps.
 - Improving observability, latency measurement, and failure reporting.
-- Adding production-grade authentication, authorization, and audit logging before real cluster integration.
+- Establishing production-grade authentication, authorization, and audit logging before live cluster integration.
 
-These are proposed enhancements, not completed features.
+These items are proposed enhancements, not completed features.
 
 ## Third-Party Attribution
 
 OpsPilot uses Strands Decider 2B and adapts the upstream example client implementation.
 
-**Upstream repository:** [strands-labs/strands-decider](https://github.com/strands-labs/strands-decider)
+- **Upstream repository:** [strands-labs/strands-decider](https://github.com/strands-labs/strands-decider)
+- **Upstream license:** Apache License 2.0
 
-The upstream project is licensed under the Apache License 2.0. See [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) and [`licenses/Apache-2.0.txt`](licenses/Apache-2.0.txt) for the included attribution and license information.
+See [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) and [`licenses/Apache-2.0.txt`](licenses/Apache-2.0.txt) for attribution and license details.
 
 ## License
 
