@@ -3,46 +3,55 @@
 **Project:** OpsPilot AI  
 **Pattern:** Tool Selection  
 **Decision Model:** Strands Decider 2B  
-**Generative Model:** Amazon Bedrock Nova Micro  
+**Explanation Model:** Amazon Bedrock Nova Micro  
 **Hackathon Tags:** `#strands-decider-2b` `#tool-selection`
-
----
 
 ## 1. Overview
 
-This reusable decision pattern demonstrates how an AI agent can use Strands Decider 2B to select the most appropriate diagnostic tool for investigating a Kubernetes application problem.
+OpsPilot AI demonstrates how an AI agent can use **Strands Decider 2B** to select the next diagnostic action for a Kubernetes troubleshooting scenario.
 
-Instead of asking a generative language model to choose a tool, the agent sends a typed choice question to Strands Decider 2B. The decision model selects one option from a predefined set.
+Instead of relying on a generative language model to choose a tool, the application sends a typed choice question to Strands Decider 2B. The decision model selects one option from a predefined set of diagnostic actions.
 
-The agent validates the selection before executing the corresponding diagnostic function. Amazon Bedrock can then generate a natural-language explanation from the problem and diagnostic evidence.
+The agent validates the selected option, executes the corresponding diagnostic function, and collects the returned evidence. Amazon Bedrock can then generate a natural-language explanation of the findings.
 
-This pattern can be adapted to other agents that must choose one action from a set of available tools.
+This pattern separates decision-making, tool execution, and explanation into distinct stages, making the workflow easier to understand, test, and reuse.
 
-## 2. Problem Statement
+## 2. Project Highlights
+
+- **Typed decision-making:** Uses `Decider.choice()` to define a structured decision question and its available options.
+- **Context-aware selection:** Supplies the Kubernetes problem description and available evidence to the decision process.
+- **Three diagnostic options:** Pod status, container logs, and Kubernetes events.
+- **Validated tool execution:** Rejects unsupported selections before executing diagnostic functions.
+- **Agent integration:** Connects the selected option directly to the corresponding function in the agent workflow.
+- **Decision transparency:** Exposes decision probabilities, reported confidence, and latency.
+- **Optional AI explanation:** Uses Amazon Bedrock to generate natural-language troubleshooting guidance.
+- **Reusable implementation:** Includes a documented pattern and runnable example for developers to adapt.
+
+## 3. Problem Statement
 
 When a Kubernetes application fails, an engineer may need to inspect several types of diagnostic information:
 
-- Pod status and restart information.
+- Pod status, restart count, and termination details.
 - Container logs containing application errors.
 - Kubernetes events describing scheduling, image, or restart problems.
 
-The agent must decide which diagnostic action to perform first.
+The agent must decide which diagnostic action to perform first based on the problem description and the evidence available to it.
 
 OpsPilot AI uses Strands Decider 2B to make this tool-selection decision.
 
-### Example Problem
+### Example scenario
 
 The payments API pod is in `CrashLoopBackOff`, has restarted six times, and exited with code 1.
 
-The agent must choose the most useful next diagnostic action.
+The agent must choose the most useful next diagnostic action from the supported options.
 
-## 3. Decision Pattern
+## 4. Decision Pattern Design
 
 **Pattern type:** Tool selection
 
-**Decision objective:** Select one diagnostic tool based on the Kubernetes problem description and any evidence included in the decision state.
+**Decision objective:** Select one diagnostic tool based on the Kubernetes problem description and any evidence supplied to the decision process.
 
-### Available Options
+### Available options
 
 | Option | Description |
 |---|---|
@@ -52,17 +61,17 @@ The agent must choose the most useful next diagnostic action.
 
 These options are defined in the `DIAGNOSTIC_CHOICES` dictionary in `app/decision.py`.
 
-### Typed Question
+### Typed choice question
 
 The pattern uses the Strands Decider `choice` question type.
 
-The question instructions are:
+The decision instructions are:
 
 > Choose the single most useful next diagnostic tool for investigating the Kubernetes problem. Select the option best supported by the provided evidence. If evidence is limited, prefer pod_status.
 
-The options and their descriptions are supplied to the model at runtime.
+The question defines the decision objective, while the options describe the actions available to the model.
 
-### Decision State
+### Decision state
 
 The state contains the Kubernetes problem description and any evidence already available to the decision process.
 
@@ -74,11 +83,11 @@ The payments API pod is in CrashLoopBackOff, has restarted six times,
 and exited with code 1.
 ```
 
-## 4. Implementation
+## 5. Implementation
 
 The primary implementation is in `app/decision.py`.
 
-### Define the Options
+### Step 1: Define the diagnostic options
 
 ```python
 DIAGNOSTIC_CHOICES = {
@@ -94,9 +103,11 @@ DIAGNOSTIC_CHOICES = {
 }
 ```
 
-### Create the Typed Question
+This dictionary defines the allowed decision options and gives the model a description of each action.
 
-The `Decider.choice()` method defines the decision question and its available options.
+### Step 2: Create the typed question
+
+The `Decider.choice()` method defines the decision instructions and available options.
 
 ```python
 question = Decider.choice(
@@ -109,9 +120,11 @@ question = Decider.choice(
 )
 ```
 
-### Send the State and Question
+Using a predefined set of choices makes the decision space explicit and helps the application map the answer to a supported diagnostic function.
 
-The problem description and typed question are sent to the Decider client.
+### Step 3: Send the state and question
+
+The problem description and typed question are passed to the Decider client.
 
 ```python
 answers = decider.ask(
@@ -120,7 +133,9 @@ answers = decider.ask(
 )
 ```
 
-### Validate the Selection
+The returned answer identifies the selected diagnostic option.
+
+### Step 4: Validate the selection
 
 The implementation checks that the response contains a valid answer and that the selected option belongs to `DIAGNOSTIC_CHOICES`.
 
@@ -128,7 +143,7 @@ Unsupported selections are rejected rather than executed.
 
 The complete implementation is available in `app/decision.py`.
 
-## 5. Wiring the Decision into the Agent
+## 6. Integrating the Decision into the Agent
 
 The agent orchestration is implemented in `app/agent.py`.
 
@@ -138,8 +153,8 @@ The workflow is:
 2. Ask Strands Decider 2B to select a diagnostic tool.
 3. Validate the returned selection.
 4. Map the selected option to a supported diagnostic function.
-5. Execute the diagnostic function.
-6. Collect the resulting evidence.
+5. Execute the selected function.
+6. Collect the diagnostic evidence.
 7. Optionally call Amazon Bedrock to generate an explanation.
 8. Return the decision and diagnostic results.
 
@@ -155,74 +170,78 @@ DIAGNOSTIC_FUNCTIONS = {
 
 Before executing a diagnostic, the agent checks that the selected option exists in this mapping.
 
-The decision and execution stages are separate, making the pattern easier to inspect, test, and reuse.
+Separating the decision and execution stages makes the pattern easier to inspect, test, and extend.
 
-## 6. Architecture
+## 7. Architecture
 
 ```text
              Kubernetes Problem
-                      |
-                      v
+                     |
+                     v
               OpsPilot AI Agent
-                      |
-                      v
+                     |
+                     v
              Strands Decider 2B
-                      |
-                      v
+                     |
+                     v
              Typed Choice Question
-                      |
-                      v
+                     |
+                     v
               Selected Tool Name
-                      |
-                      v
+                     |
+                     v
              Validate the Selection
-                      |
-                      v
+                     |
+                     v
              Execute Diagnostic Tool
-                      |
-                      v
+                     |
+                     v
               Diagnostic Evidence
-                      |
-                      v
+                     |
+                     v
               Amazon Bedrock
-                (Optional)
-                      |
-                      v
-                Final Result
+                 (Optional)
+                     |
+                     v
+                 Final Result
 ```
 
-**Important:** The diagnostic functions in the current OpsPilot AI implementation return simulated evidence. They do not query a live Kubernetes cluster.
+**Diagnostic scope:** The current implementation uses simulated diagnostic evidence. It demonstrates the complete decision-selection and evidence-processing workflow without querying a live Kubernetes cluster.
 
-## 7. Running the Example Application
+## 8. Running the Example Application
 
 ### Prerequisites
 
 You need:
 
 - Python 3.11 or a compatible version.
-- The OpsPilot AI repository.
-- The project's Python dependencies.
-- A running Strands Decider server with the supported model checkpoint.
+- The OpsPilot AI repository and its Python dependencies.
+- A separately installed and running Strands Decider server with the supported model checkpoint.
+- AWS credentials and appropriate IAM permissions if using the optional Bedrock explanation.
 
-Follow the official Strands Decider documentation to install and configure the server:
+Follow the official Strands Decider documentation for installation and configuration:
 
 https://github.com/strands-labs/strands-decider
 
-### Start the Application
+### Start the Decider service
 
-From the repository root, activate the Python virtual environment:
+Activate the Python virtual environment from the repository root:
 
 ```bash
 source .venv/bin/activate
 ```
 
-Check that the Decider server is responding:
+Check the Decider server:
 
 ```bash
 curl -sS http://127.0.0.1:8099/health
 ```
 
-Run the troubleshooting workflow without invoking Amazon Bedrock:
+The server should return JSON describing its health and loaded model.
+
+### Run the troubleshooting workflow
+
+Run the application without invoking Amazon Bedrock:
 
 ```bash
 python -m app.main \
@@ -232,24 +251,56 @@ python -m app.main \
   --skip-explanation
 ```
 
-The application returns information including:
+The output includes:
 
 - The original problem description.
 - The selected diagnostic tool.
-- Decision probabilities and confidence information.
+- Decision probabilities and reported confidence.
 - Decision latency.
 - Diagnostic evidence.
 - An optional explanation field.
 
 The selected tool and probabilities may vary between runs.
 
-## 8. How to Reuse This Pattern
+## 9. Example Decision Result
 
-You can adapt this decision pattern to other applications that need to select one action from a predefined set.
+A recorded successful run selected `container_logs` for the troubleshooting scenario.
 
-### Step 1: Define the Available Options
+```json
+{
+  "selected_tool": "container_logs",
+  "probabilities": {
+    "pod_status": 0.0886,
+    "container_logs": 0.6629,
+    "pod_events": 0.2485
+  },
+  "confidence": 0.4944,
+  "decider_calls": 1,
+  "latency_ms": 4599.57
+}
+```
 
-Create a dictionary containing valid option names and clear descriptions.
+The corresponding diagnostic function returned the following scenario evidence:
+
+```text
+Pod: payments-api-demo
+Namespace: production
+Simulated container log:
+ERROR: Required environment variable DATABASE_URL is missing.
+Application startup failed.
+```
+
+This example demonstrates how the selected tool determines which diagnostic function runs and what evidence is returned.
+
+The reported probability for `container_logs` was approximately 66.29%. The recorded latency was approximately 4.6 seconds for this run. These values are illustrative results from one execution, not guarantees of diagnostic correctness or performance.
+
+## 10. How to Reuse This Pattern
+
+This pattern can be adapted to other applications that must select one action from a predefined set of tools.
+
+### Step 1: Define the available options
+
+Create a dictionary of supported option names and clear descriptions.
 
 For example, a cloud-support agent might choose between:
 
@@ -257,43 +308,35 @@ For example, a cloud-support agent might choose between:
 - `inspect_logs`
 - `inspect_recent_deployments`
 
-### Step 2: Write the Decision Instructions
+### Step 2: Write the decision instructions
 
-Describe the decision objective clearly.
+Describe the decision objective and explain what the model should consider when selecting an option.
 
-Specify what the model should consider when selecting an option.
+### Step 3: Create a typed choice question
 
-### Step 3: Create a Typed Choice Question
+Use the Strands Decider client to create a `choice` question with the supported options.
 
-Use the Strands Decider client to create a `choice` question with the available options.
+### Step 4: Supply the application state
 
-### Step 4: Supply the Application State
+Provide the problem description and relevant evidence available at decision time.
 
-Provide the problem description and any relevant evidence already available.
+### Step 5: Validate the answer
 
-### Step 5: Validate the Answer
+Check that the returned option is supported by the application. Reject missing or unsupported selections.
 
-Check that the returned option is supported by the application.
+### Step 6: Map options to functions
 
-Reject missing or unsupported selections.
+Create an allowlist mapping valid option names to application functions. Execute only functions explicitly registered in that mapping.
 
-### Step 6: Map Options to Functions
+### Step 7: Evaluate the pattern
 
-Create an allowlist mapping valid option names to application functions.
+Test representative scenarios and inspect selected options, probabilities, confidence values, and latency. Evaluate decision quality instead of assuming that a valid response is necessarily the correct decision.
 
-Execute only functions explicitly registered in that mapping.
-
-### Step 7: Evaluate the Pattern
-
-Test representative scenarios and inspect the selected options, probabilities, confidence values, and latency.
-
-Measure decision quality rather than assuming that a valid response is necessarily a correct decision.
-
-## 9. Confidence and Safety Considerations
+## 11. Decision Confidence and Safety
 
 Strands Decider 2B returns decision information that can include option probabilities and a confidence value.
 
-These values can help developers inspect model behavior. They do not guarantee that the selected diagnostic action is correct.
+These values help developers inspect model behavior, but they do not guarantee that the selected diagnostic action is correct.
 
 The current implementation:
 
@@ -308,27 +351,27 @@ The instruction to prefer `pod_status` when evidence is limited is part of the d
 
 For production-oriented extensions, developers should consider explicit uncertainty handling, additional validation, authentication, authorization, audit logging, and appropriate operational safeguards.
 
-## 10. Strands Decider 2B and Amazon Bedrock
+## 12. Strands Decider 2B and Amazon Bedrock
 
-The two models have different responsibilities in this pattern.
+The components have distinct responsibilities in this pattern.
 
-### Strands Decider 2B
+### Strands Decider 2B — Decision selection
 
-Responsible for selecting the diagnostic tool from the available options.
+Selects the diagnostic tool from the predefined options based on the supplied problem state.
 
-### Diagnostic Function
+### Diagnostic function — Evidence collection
 
-Responsible for returning the diagnostic evidence associated with the selected option.
+Executes the selected application function and returns the corresponding diagnostic evidence.
 
-### Amazon Bedrock
+### Amazon Bedrock — Natural-language explanation
 
-Optionally generates a natural-language troubleshooting explanation using the problem description and diagnostic evidence.
+Optionally generates a natural-language troubleshooting explanation from the problem description and diagnostic evidence.
 
 The Bedrock explanation component is implemented separately in `app/explainer.py`.
 
 A Bedrock invocation may incur AWS charges. The `--skip-explanation` option allows the decision and diagnostic workflow to run without invoking Bedrock.
 
-## 11. Project Source Files
+## 13. Project Source Files
 
 | File | Responsibility |
 |---|---|
@@ -341,32 +384,23 @@ A Bedrock invocation may incur AWS charges. The `--skip-explanation` option allo
 | `tests/test_diagnostics.py` | Tests diagnostic functions. |
 | `tests/test_explainer.py` | Tests explanation functionality. |
 
-## 12. Limitations and Future Improvements
+## 14. Future Enhancements
 
-This pattern demonstrates decision-driven tool selection, but it is not a production-ready Kubernetes troubleshooting system.
+Potential extensions to this pattern include:
 
-Current limitations include:
-
-- Diagnostic data is simulated.
-- Live Kubernetes API integration is not implemented.
-- A selected tool is not guaranteed to be the most useful action.
-- Confidence-based routing and fallback handling are not implemented.
-- Performance and decision quality have not been comprehensively benchmarked.
-- Fresh-environment installation reproducibility has not been fully verified.
-
-Potential improvements include:
-
-- Adding read-only Kubernetes API diagnostics.
-- Testing decision quality across representative failure scenarios.
+- Integrating read-only Kubernetes API diagnostics.
+- Evaluating decision quality across representative failure scenarios.
 - Implementing explicit low-confidence handling.
 - Recording structured evaluation results.
 - Measuring decision latency across repeated runs.
 - Adding appropriate security controls before connecting to real clusters.
 
-## 13. References
+These are potential extensions to the current implementation.
 
-- Strands Decider repository: https://github.com/strands-labs/strands-decider
-- Strands Decider introduction: https://strandsagents.com/blog/introducing-strands-decider/
+## 15. References
+
+- [Strands Decider repository](https://github.com/strands-labs/strands-decider)
+- [Introducing Strands Decider](https://strandsagents.com/blog/introducing-strands-decider/)
 
 ## License
 
